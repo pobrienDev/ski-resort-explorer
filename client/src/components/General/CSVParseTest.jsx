@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Papa from 'papaparse';
 
 const CSVParseTest = () => {
   const [csvData, setCsvData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
   const [filters, setFilters] = useState({
     search: '',
     stateID: '',
@@ -17,10 +16,7 @@ const CSVParseTest = () => {
 
     if (file) {
       Papa.parse(file, {
-        complete: (result) => {
-          setCsvData(result.data);
-          setFilteredData(result.data); // Set initial data for filtering
-        },
+        complete: (result) => setCsvData(result.data),
         header: true, // If your CSV has headers
         skipEmptyLines: true, // Skip empty lines in the CSV
       });
@@ -36,19 +32,21 @@ const CSVParseTest = () => {
     }));
   };
 
-  // Apply filters to data
-  const applyFilters = () => {
+  // Derive the filtered rows from the current CSV and filters, so uploading a
+  // new file re-filters immediately. Cells can be undefined when the CSV lacks
+  // a column or a row is short — guard before calling string methods.
+  const filteredData = useMemo(() => {
     let filtered = csvData;
 
     if (filters.search) {
       filtered = filtered.filter((resort) =>
-        resort.resort_name.toLowerCase().includes(filters.search.toLowerCase())
+        String(resort.resort_name ?? '').toLowerCase().includes(filters.search.toLowerCase())
       );
     }
 
     if (filters.stateID) {
       filtered = filtered.filter((resort) =>
-        resort.stateID.toLowerCase().includes(filters.stateID.toLowerCase())
+        String(resort.stateID ?? '').toLowerCase().includes(filters.stateID.toLowerCase())
       );
     }
 
@@ -64,13 +62,8 @@ const CSVParseTest = () => {
       );
     }
 
-    setFilteredData(filtered);
-  };
-
-  // Reapply filters whenever filters state changes
-  React.useEffect(() => {
-    applyFilters();
-  }, [filters]);
+    return filtered;
+  }, [csvData, filters]);
 
   return (
     <div>

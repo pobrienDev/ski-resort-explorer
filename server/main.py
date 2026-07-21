@@ -51,46 +51,69 @@ def fetch_resorts(query, params=None):
         if 'conn' in locals():
             conn.close()
 
+def resorts_response(result):
+    """Build a JSON response, using 500 when the fetch produced an error."""
+    return jsonify(result), (500 if "error" in result else 200)
+
 @app.route("/api/resorts", methods=['GET'])
 def get_resorts():
     """Fetch all ski resorts."""
     query = """
-        SELECT DISTINCT sr.resortID, sr.resort_name, st.state_name, sr.summit, sr.base, sr.lifts, 
-               sr.runs, sr.green_percent, sr.blue_percent, sr.black_percent, sr.double_black_percent, 
-               sr.lat, sr.lon, sr.url 
-        FROM ski_resorts sr 
+        SELECT DISTINCT sr.resortID, sr.resort_name, st.state_name, sr.summit, sr.base, sr.lifts,
+               sr.runs, sr.green_percent, sr.blue_percent, sr.black_percent, sr.double_black_percent,
+               sr.lat, sr.lon, sr.url
+        FROM ski_resorts sr
         JOIN states_terr st ON sr.stateID = st.stateID;
     """
     result = fetch_resorts(query)
-    return jsonify(result), 200
+    return resorts_response(result)
+
+@app.route("/api/resorts/<int:resort_id>", methods=['GET'])
+def get_resort(resort_id):
+    """Fetch a single ski resort by ID."""
+    query = """
+        SELECT DISTINCT sr.resortID, sr.resort_name, st.state_name, sr.summit, sr.base, sr.lifts,
+               sr.runs, sr.green_percent, sr.blue_percent, sr.black_percent, sr.double_black_percent,
+               sr.lat, sr.lon, sr.url
+        FROM ski_resorts sr
+        JOIN states_terr st ON sr.stateID = st.stateID
+        WHERE sr.resortID = %s;
+    """
+    result = fetch_resorts(query, (resort_id,))
+    if "error" in result:
+        return jsonify(result), 500
+    resorts = result.get("resorts", [])
+    if not resorts:
+        return jsonify({"error": "Resort not found"}), 404
+    return jsonify({"resort": resorts[0]}), 200
 
 @app.route("/api/colorado", methods=['GET'])
 def get_co_resorts():
     """Fetch all ski resorts in Colorado (stateID = 4)."""
     query = """
-        SELECT DISTINCT sr.resortID, sr.resort_name, st.state_name, sr.summit, sr.base, sr.lifts, 
-               sr.runs, sr.green_percent, sr.blue_percent, sr.black_percent, sr.double_black_percent, 
-               sr.lat, sr.lon 
-        FROM ski_resorts sr 
-        INNER JOIN states_terr st ON sr.stateID = st.stateID 
+        SELECT DISTINCT sr.resortID, sr.resort_name, st.state_name, sr.summit, sr.base, sr.lifts,
+               sr.runs, sr.green_percent, sr.blue_percent, sr.black_percent, sr.double_black_percent,
+               sr.lat, sr.lon, sr.url
+        FROM ski_resorts sr
+        INNER JOIN states_terr st ON sr.stateID = st.stateID
         WHERE sr.stateID = %s;
     """
     result = fetch_resorts(query, (4,))
-    return jsonify(result), 200
+    return resorts_response(result)
 
 @app.route("/api/utah", methods=['GET'])
 def get_ut_resorts():
     """Fetch all ski resorts in Utah (stateID = 29)."""
     query = """
-        SELECT DISTINCT sr.resortID, sr.resort_name, st.state_name, sr.summit, sr.base, sr.lifts, 
-               sr.runs, sr.green_percent, sr.blue_percent, sr.black_percent, sr.double_black_percent, 
-               sr.lat, sr.lon 
-        FROM ski_resorts sr 
-        INNER JOIN states_terr st ON sr.stateID = st.stateID 
+        SELECT DISTINCT sr.resortID, sr.resort_name, st.state_name, sr.summit, sr.base, sr.lifts,
+               sr.runs, sr.green_percent, sr.blue_percent, sr.black_percent, sr.double_black_percent,
+               sr.lat, sr.lon, sr.url
+        FROM ski_resorts sr
+        INNER JOIN states_terr st ON sr.stateID = st.stateID
         WHERE sr.stateID = %s;
     """
     result = fetch_resorts(query, (29,))
-    return jsonify(result), 200
+    return resorts_response(result)
 
 if __name__ == "__main__":
     app.run(debug=True, port=8080)

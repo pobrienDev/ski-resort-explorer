@@ -26,7 +26,7 @@ const SearchBar = ({ resorts }) => {
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center" }}>
                 {filteredResorts.length > 0 ? (
                     filteredResorts.map((resort, index) => (
-                        <ResortCard key={resort.id || resort.resort_name || index} resort={resort} />
+                        <ResortCard key={resort.resortID ?? index} resort={resort} />
                     ))
                 ) : (
                     <Typography variant="body1">

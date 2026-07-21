@@ -3,6 +3,7 @@ import { Container, Typography, Box } from "@mui/material";
 import axios from "axios";
 import ResortCard from "../General/ResortCard";
 import SearchBar from "../General/SearchBar";
+import { API_BASE } from "../../api";
 import './Home.css';
 
 
@@ -13,7 +14,7 @@ function Home() {
     
     useEffect(() => {
         axios
-            .get("http://localhost:8080/api/resorts")
+            .get(`${API_BASE}/api/resorts`)
             .then((response) => {
                 console.log("API Response Data:", response.data.resorts);
                 

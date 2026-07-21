@@ -12,6 +12,7 @@ A full-stack web app for exploring US ski resorts — browse resorts on an inter
 | Endpoint | Description |
 | --- | --- |
 | `GET /api/resorts` | All ski resorts |
+| `GET /api/resorts/<id>` | A single resort by ID |
 | `GET /api/colorado` | Colorado resorts |
 | `GET /api/utah` | Utah resorts |
 
@@ -31,6 +32,9 @@ Database connection is configured via environment variables (or a `.env` file in
 
 ```bash
 cd client
+cp .env.example .env   # then fill in your OpenWeather API key
 npm install
-npm run dev      # runs on http://localhost:5173
+npm run dev            # runs on http://localhost:5173
 ```
+
+Client environment variables (in `client/.env`): `VITE_WEATHER_API_KEY` (OpenWeather key for the weather panel and radar map) and `VITE_API_BASE_URL` (Flask API origin, defaults to `http://localhost:8080`).

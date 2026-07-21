@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./Resorts.css"; // Import the CSS file for the table styling
+import { API_BASE } from "../../api";
+
+// The API serializes DECIMAL columns as strings (e.g. "1200.610"), and cells
+// can be NULL/empty — normalize before comparing so sorting stays numeric.
+const toComparable = (value) => {
+    if (value === null || value === undefined || value === "") return null;
+    const num = Number(value);
+    return Number.isNaN(num) ? value.toString() : num;
+};
 
 
 const Resorts = () => {
@@ -12,13 +21,13 @@ const Resorts = () => {
     useEffect(() => {
         const fetchResorts = async () => {
             try {
-                const response = await axios.get("http://localhost:8080/api/resorts");
+                const response = await axios.get(`${API_BASE}/api/resorts`);
                 if (Array.isArray(response.data.resorts)) {
                     setResorts(response.data.resorts);
                 } else {
                     setError("Data format is invalid.");
                 }
-            } catch (err) {
+            } catch {
                 setError("Failed to fetch resorts data.");
             } finally {
                 setLoading(false);
@@ -56,16 +65,18 @@ const Resorts = () => {
 
         setResorts((prevResorts) =>
             [...prevResorts].sort((a, b) => {
-                const aValue = a[key];
-                const bValue = b[key];
+                const aValue = toComparable(a[key]);
+                const bValue = toComparable(b[key]);
 
-                if (typeof aValue === "number" && typeof bValue === "number") {
-                    return direction === "asc" ? aValue - bValue : bValue - aValue;
-                } else {
-                    return direction === "asc"
-                        ? aValue.toString().localeCompare(bValue.toString())
-                        : bValue.toString().localeCompare(aValue.toString());
-                }
+                // Empty cells always sort last, regardless of direction
+                if (aValue === null) return bValue === null ? 0 : 1;
+                if (bValue === null) return -1;
+
+                const cmp =
+                    typeof aValue === "number" && typeof bValue === "number"
+                        ? aValue - bValue
+                        : aValue.toString().localeCompare(bValue.toString());
+                return direction === "asc" ? cmp : -cmp;
             })
         );
     };
@@ -87,7 +98,6 @@ const Resorts = () => {
                                     className={sortConfig.key === columnMappings[columnName] ? `sorted-${sortConfig.direction}` : ""}
                                 >
                                     {columnName}
-                                    {sortConfig.key === columnMappings[columnName] ? (sortConfig.direction === "asc" ? " ↑" : " ↓") : ""}
                                 </th>
                             ))}
                         </tr>
