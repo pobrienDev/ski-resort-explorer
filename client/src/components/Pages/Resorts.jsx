@@ -1,0 +1,124 @@
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import "./Resorts.css"; // Import the CSS file for the table styling
+
+
+const Resorts = () => {
+    const [resorts, setResorts] = useState([]);
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchResorts = async () => {
+            try {
+                const response = await axios.get("http://localhost:8080/api/resorts");
+                if (Array.isArray(response.data.resorts)) {
+                    setResorts(response.data.resorts);
+                } else {
+                    setError("Data format is invalid.");
+                }
+            } catch (err) {
+                setError("Failed to fetch resorts data.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchResorts();
+    }, []);
+
+    const columnMappings = {
+        "Resort ID": "resortID",
+        "Resort Name": "resort_name",
+        "State": "state_name",
+        "Summit (meters)": "summit",
+        "Base (meters)": "base",
+        "Lifts": "lifts",
+        "Runs": "runs",
+        "Green %": "green_percent",
+        "Blue %": "blue_percent",
+        "Black %": "black_percent",
+        "Double Black %": "double_black_percent",
+        "Latitude": "lat",
+        "Longitude": "lon",
+    };
+
+    const handleSort = (columnName) => {
+        const key = columnMappings[columnName];
+        if (!key) return;
+
+        let direction = "asc";
+        if (sortConfig.key === key && sortConfig.direction === "asc") {
+            direction = "desc";
+        }
+        setSortConfig({ key, direction });
+
+        setResorts((prevResorts) =>
+            [...prevResorts].sort((a, b) => {
+                const aValue = a[key];
+                const bValue = b[key];
+
+                if (typeof aValue === "number" && typeof bValue === "number") {
+                    return direction === "asc" ? aValue - bValue : bValue - aValue;
+                } else {
+                    return direction === "asc"
+                        ? aValue.toString().localeCompare(bValue.toString())
+                        : bValue.toString().localeCompare(aValue.toString());
+                }
+            })
+        );
+    };
+
+    if (loading) return <p>Loading resorts data...</p>;
+    if (error) return <p>{error}</p>;
+
+    return (
+        <div className="resort-parent-container">
+            <div className="resort-table-container">
+                <h2>Resorts Data Table</h2>
+                <table className="resort-table">
+                    <thead>
+                        <tr>
+                            {Object.keys(columnMappings).map((columnName) => (
+                                <th
+                                    key={columnName}
+                                    onClick={() => handleSort(columnName)}
+                                    className={sortConfig.key === columnMappings[columnName] ? `sorted-${sortConfig.direction}` : ""}
+                                >
+                                    {columnName}
+                                    {sortConfig.key === columnMappings[columnName] ? (sortConfig.direction === "asc" ? " ↑" : " ↓") : ""}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {resorts.length > 0 ? (
+                            resorts.map((resort) => (
+                                <tr key={resort.resortID}>
+                                    <td>{resort.resortID}</td>
+                                    <td>{resort.resort_name}</td>
+                                    <td>{resort.state_name}</td>
+                                    <td>{resort.summit}</td>
+                                    <td>{resort.base}</td>
+                                    <td>{resort.lifts}</td>
+                                    <td>{resort.runs}</td>
+                                    <td>{resort.green_percent}</td>
+                                    <td>{resort.blue_percent}</td>
+                                    <td>{resort.black_percent}</td>
+                                    <td>{resort.double_black_percent}</td>
+                                    <td>{resort.lat}</td>
+                                    <td>{resort.lon}</td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr><td colSpan="13">No data available</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+            );
+};
+
+export default Resorts;

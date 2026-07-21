@@ -1,0 +1,113 @@
+:root {
+    color-scheme: light dark;
+
+    --bg-page: #ffffff;
+    --bg-container: #f9f9f9;
+    --bg-row-even: #f2f2f2;
+    --bg-row-hover: #e0e0e0;
+
+    --text-primary: #111111;
+    --border-color: #dddddd;
+
+    --header-bg: #2196f3;
+    --header-bg-hover: #5169be;
+    --header-text: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-page: #0f0f0f;
+        --bg-container: #1a1a1a;
+        --bg-row-even: #222222;
+        --bg-row-hover: #2a2a2a;
+
+        --text-primary: #f5f5f5;
+        --border-color: #333333;
+
+        --header-bg: #1e88e5;
+        --header-bg-hover: #1565c0;
+        --header-text: #ffffff;
+    }
+}
+
+
+/* Parent container to center the table */
+.resort-parent-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    width: 100vw;
+    box-sizing: border-box;
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+}
+
+/* Table container */
+.resort-table-container {
+    padding: 20px;
+    font-family: 'Arial', sans-serif;
+    background-color: var(--bg-container);
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    max-width: 1300px;
+    box-sizing: border-box;
+}
+
+/* Table styling */
+.resort-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+/* Table headers */
+.resort-table th {
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    padding: 10px;
+    text-align: left;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* Header hover */
+.resort-table th:hover {
+    background-color: var(--header-bg-hover);
+}
+
+/* Table cells */
+.resort-table td {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+}
+
+/* Alternate rows */
+.resort-table tr:nth-child(even) {
+    background-color: var(--bg-row-even);
+}
+
+/* Row hover */
+.resort-table tr:hover {
+    background-color: var(--bg-row-hover);
+}
+
+/* Sorted indicators */
+.sorted-asc::after {
+    content: " ↑";
+}
+
+.sorted-desc::after {
+    content: " ↓";
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+    .resort-table th,
+    .resort-table td {
+        padding: 8px;
+        font-size: 14px;
+    }
+}
