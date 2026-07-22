@@ -1,6 +1,6 @@
 # Ski Resort Explorer
 
-A full-stack web app for exploring US ski resorts — browse resorts on an interactive map and compare stats like summit/base elevation, lifts, runs, and trail difficulty breakdowns.
+A full-stack web app for exploring ski resorts — browse resorts on an interactive map and compare stats like summit/base elevation, lifts, runs, and trail difficulty breakdowns.
 
 ## Tech stack
 
