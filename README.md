@@ -13,8 +13,7 @@ A full-stack web app for exploring ski resorts — browse resorts on an interact
 | --- | --- |
 | `GET /api/resorts` | All ski resorts |
 | `GET /api/resorts/<id>` | A single resort by ID |
-| `GET /api/colorado` | Colorado resorts |
-| `GET /api/utah` | Utah resorts |
+
 
 ## Running locally
 
