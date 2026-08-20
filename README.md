@@ -37,3 +37,5 @@ npm run dev            # runs on http://localhost:5173
 ```
 
 Client environment variables (in `client/.env`): `VITE_WEATHER_API_KEY` (OpenWeather key for the weather panel and radar map) and `VITE_API_BASE_URL` (Flask API origin, defaults to `http://localhost:8080`).
+
+(Insert screenshot here later)
