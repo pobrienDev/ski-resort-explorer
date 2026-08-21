@@ -17,6 +17,15 @@ A full-stack web app for exploring ski resorts — browse resorts on an interact
 
 ## Running locally
 
+### Database
+
+Requires a local MySQL server. Create the database and import the included dump (schema + all resort data):
+
+```bash
+mysql -u root -e "CREATE DATABASE SkiResorts"
+mysql -u root SkiResorts < server/skiresorts.sql
+```
+
 ### Backend
 
 ```bash
