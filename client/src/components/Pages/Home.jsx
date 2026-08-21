@@ -123,7 +123,7 @@ function Home() {
                     </Typography>
                     <TextField
                         fullWidth
-                        placeholder="Search by resort or state…"
+                        placeholder="Search by resort or location…"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         sx={{

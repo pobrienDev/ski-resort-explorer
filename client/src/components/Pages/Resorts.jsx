@@ -55,7 +55,7 @@ const Resorts = () => {
 
     const columnMappings = {
         "Resort Name": "resort_name",
-        "State": "state_name",
+        "Location": "state_name",
         "Summit (ft)": "summit",
         "Base (ft)": "base",
         "Lifts": "lifts",
