@@ -1,46 +1,55 @@
-import React from "react";
-import { Card, CardContent, Typography, Button } from "@mui/material";
+import { Card, CardContent, CardActions, Typography, Button, Chip, Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import DifficultyBar from "./DifficultyBar";
 
+const toFeet = (meters) => {
+    const n = Number(meters);
+    return meters === "" || meters == null || Number.isNaN(n) ? null : Math.round(n * 3.28084);
+};
 
 const ResortCard = ({ resort }) => {
-    const navigate = useNavigate(); // allows navigation to other pages
-    
-    const navigateToPage = () => {
-        if (resort.resortID) {
-            navigate(`/resorts/${resort.resortID}`);
-        } else {
-            console.log("Couldn't navigate!");
-        }
-    }
-    
+    const navigate = useNavigate();
+    const summitFt = toFeet(resort.summit);
+
     return (
-        <Card sx={{ width: 300 }}>
-            <CardContent>
-                <Typography variant="h5" component="div">
-                    {resort.resort_name}
+        <Card
+            sx={{
+                width: 300,
+                display: "flex",
+                flexDirection: "column",
+                transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                "&:hover": { transform: "translateY(-4px)", boxShadow: 8 },
+            }}
+        >
+            <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1 }}>
+                    <Typography variant="h6" component="h3" sx={{ lineHeight: 1.25 }}>
+                        {resort.resort_name}
+                    </Typography>
+                    <Chip
+                        label={resort.state_name}
+                        size="small"
+                        variant="outlined"
+                        sx={{ flexShrink: 0, mt: "2px" }}
+                    />
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    {summitFt != null ? `${summitFt.toLocaleString()} ft summit` : "Summit —"} ·{" "}
+                    {resort.lifts} lifts · {resort.runs} runs
                 </Typography>
-                <Typography variant="body1" component="div">
-                    {resort.state_name}
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                    Summit: {(resort.summit * 3.28084).toFixed(0)} ft
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                    Lifts: {resort.lifts}
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                    Runs: {resort.runs}
-                </Typography>
-                <Button 
-                    onClick={navigateToPage}
-                    variant="contained"
-                    color="primary"
-                    fullWidth sx={{ mt: 2 }}
-                >
-                    View Details
-                </Button>
+                <DifficultyBar resort={resort} sx={{ mt: 1.5 }} />
             </CardContent>
+            <CardActions sx={{ px: 2, pb: 2, pt: 0 }}>
+                <Button
+                    size="small"
+                    variant="contained"
+                    fullWidth
+                    disabled={!resort.resortID}
+                    onClick={() => navigate(`/resorts/${resort.resortID}`)}
+                >
+                    View details
+                </Button>
+            </CardActions>
         </Card>
     );
 };

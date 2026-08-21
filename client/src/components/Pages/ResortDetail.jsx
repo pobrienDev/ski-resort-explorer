@@ -1,16 +1,29 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import {
+    Container,
+    Typography,
+    Box,
+    Button,
+    Chip,
+    Paper,
+    Link,
+    CircularProgress,
+} from "@mui/material";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";  // Import Leaflet styles
-import '/src/components/Pages/ResortDetail.css';
+import DifficultyBar from "../General/DifficultyBar";
 import { API_BASE } from "../../api";
 
 const API_KEY = import.meta.env.VITE_WEATHER_API_KEY;  // OpenWeather API key — set in client/.env
 
-// Percent values can be NULL/empty in the database; 0 is a real value.
-const formatPercent = (value) =>
-    value === null || value === undefined || value === "" ? "N/A" : `${value}%`;
+const toFeet = (meters) => {
+    const n = Number(meters);
+    return meters === "" || meters == null || Number.isNaN(n) ? null : Math.round(n * 3.28084);
+};
+
+const formatFeet = (ft) => (ft == null ? "—" : `${ft.toLocaleString()} ft`);
 
 const ResortDetail = () => {
     const { resortID } = useParams();
@@ -64,107 +77,123 @@ const ResortDetail = () => {
         }
     }, [showMore, resort]);
 
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>{error}</p>;
-    if (!resort) return <p>Resort not found.</p>;
+    if (loading) {
+        return (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
+    if (error) {
+        return (
+            <Typography align="center" color="text.secondary" sx={{ mt: 8 }}>
+                {error}
+            </Typography>
+        );
+    }
+    if (!resort) {
+        return (
+            <Typography align="center" color="text.secondary" sx={{ mt: 8 }}>
+                Resort not found.
+            </Typography>
+        );
+    }
+
+    const summitFt = toFeet(resort.summit);
+    const baseFt = toFeet(resort.base);
+    const verticalFt = summitFt != null && baseFt != null ? summitFt - baseFt : null;
+    const stats = [
+        { label: "Summit", value: formatFeet(summitFt) },
+        { label: "Base", value: formatFeet(baseFt) },
+        { label: "Vertical drop", value: formatFeet(verticalFt) },
+        { label: "Lifts", value: resort.lifts ?? "—" },
+        { label: "Runs", value: resort.runs ?? "—" },
+    ];
 
     return (
-        <div className="resort-detail-parent-container">
-            <div className="resort-detail-container">
-                <h1>{resort.resort_name}</h1>
+        <Container maxWidth="md" sx={{ pb: 6 }}>
+            <Button onClick={() => navigate(-1)} sx={{ mb: 1 }}>
+                ← Back
+            </Button>
 
-                <button
-                    onClick={() => navigate("/")}
-                    style={{
-                        marginBottom: '20px',
-                        padding: '10px 15px',
-                        backgroundColor: '#2196f3',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer',
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+                <Typography variant="h3" component="h1" sx={{ fontWeight: 700 }}>
+                    {resort.resort_name}
+                </Typography>
+                <Chip label={resort.state_name} variant="outlined" />
+            </Box>
+
+            <Paper variant="outlined" sx={{ mt: 3, p: 3 }}>
+                <Box
+                    sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)", md: "repeat(5, 1fr)" },
+                        gap: 2,
                     }}
                 >
-                    Back to Home
-                </button>
+                    {stats.map((stat) => (
+                        <Box key={stat.label}>
+                            <Typography variant="overline" color="text.secondary">
+                                {stat.label}
+                            </Typography>
+                            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                                {stat.value}
+                            </Typography>
+                        </Box>
+                    ))}
+                </Box>
 
-                <div className="resort-info">
-                    <p><strong>Location:</strong> {resort.state_name}</p>
-                    <p><strong>Summit:</strong> {(resort.summit * 3.28084).toFixed(0)} ft</p>
-                    <p><strong>Base:</strong> {(resort.base * 3.28084).toFixed(0)} ft</p>
-                    <p><strong>Lifts:</strong> {resort.lifts}</p>
-                    <p><strong>Runs:</strong> {resort.runs}</p>
-                    <p><strong>Green Runs:</strong> {formatPercent(resort.green_percent)}</p>
-                    <p><strong>Blue Runs:</strong> {formatPercent(resort.blue_percent)}</p>
-                    <p><strong>Black Runs:</strong> {formatPercent(resort.black_percent)}</p>
-                    <p><strong>Double Black Runs:</strong> {formatPercent(resort.double_black_percent)}</p>
-                    <p><strong>Latitude:</strong> {resort.lat}</p>
-                    <p><strong>Longitude:</strong> {resort.lon}</p>
-                </div>
+                <Typography variant="overline" color="text.secondary" sx={{ display: "block", mt: 3 }}>
+                    Trail difficulty
+                </Typography>
+                <DifficultyBar resort={resort} height={10} showLegend sx={{ mt: 0.5 }} />
+            </Paper>
 
-                <button
-                    onClick={() => setShowMore(prev => !prev)}
-                    style={{
-                        marginTop: '20px',
-                        padding: '10px 15px',
-                        backgroundColor: '#2196f3',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer',
-                    }}
-                >
-                    {showMore ? "▲ Show Less ▲" : "▼ Show More ▼"}
-                </button>
+            <Button variant="contained" onClick={() => setShowMore((prev) => !prev)} sx={{ mt: 3 }}>
+                {showMore ? "Hide weather & radar" : "Weather & radar"}
+            </Button>
 
-                {showMore && (
-                    <div className="additional-info" style={{ marginTop: '20px' }}>
-                        <p>
-                            <strong>Current Weather: </strong>
-                            {weather
-                                ? `${weather.weather[0].description}, ${weather.main.temp}°F`
-                                : weatherError
-                                    ? "Weather is unavailable right now."
-                                    : "Loading..."}
-                        </p>
+            {showMore && (
+                <Paper variant="outlined" sx={{ mt: 2, p: 3 }}>
+                    <Typography>
+                        <strong>Current weather: </strong>
+                        {weather
+                            ? `${weather.weather[0].description}, ${weather.main.temp}°F`
+                            : weatherError
+                                ? "Weather is unavailable right now."
+                                : "Loading..."}
+                    </Typography>
 
-                        {/* Weather Radar Map using Leaflet */}
-                        <div style={{ marginTop: '20px', textAlign: "center" }}>
-                            <h3>Weather Radar</h3>
-                            <MapContainer
-                                center={[resort.lat, resort.lon]}
-                                zoom={7}
-                                style={{ height: "400px", width: "600px", borderRadius: "8px" }}
-                            >
-                                <TileLayer
-                                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                    attribution="&copy; OpenStreetMap contributors"
-                                />
-                                <TileLayer
-                                    url={`https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=${API_KEY}`}
-                                    attribution="&copy; OpenWeather"
-                                />
-                            </MapContainer>
-                        </div>
+                    <Typography variant="h6" sx={{ mt: 2 }}>
+                        Weather radar
+                    </Typography>
+                    <Box sx={{ mt: 1, borderRadius: 2, overflow: "hidden" }}>
+                        <MapContainer
+                            center={[Number(resort.lat), Number(resort.lon)]}
+                            zoom={7}
+                            style={{ height: 400, width: "100%" }}
+                        >
+                            <TileLayer
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                attribution="&copy; OpenStreetMap contributors"
+                            />
+                            <TileLayer
+                                url={`https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=${API_KEY}`}
+                                attribution="&copy; OpenWeather"
+                            />
+                        </MapContainer>
+                    </Box>
 
-                        {/* Visit Site Link */}
-                        {resort.url && (
-                            <p>
-                                <strong>Official Ski Resort Website: </strong>
-                                <a
-                                    href={resort.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{ color: "#2196f3", textDecoration: "none", fontWeight: "bold" }}
-                                >
-                                    Visit Site
-                                </a>
-                            </p>
-                        )}
-                    </div>
-                )}
-            </div>
-        </div>
+                    {resort.url && (
+                        <Typography sx={{ mt: 2 }}>
+                            <Link href={resort.url} target="_blank" rel="noopener noreferrer" fontWeight={600}>
+                                Official resort website
+                            </Link>
+                        </Typography>
+                    )}
+                </Paper>
+            )}
+        </Container>
     );
 };
 

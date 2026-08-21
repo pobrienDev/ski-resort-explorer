@@ -11,6 +11,22 @@ const toComparable = (value) => {
     return Number.isNaN(num) ? value.toString() : num;
 };
 
+const toFeet = (meters) => {
+    const n = Number(meters);
+    return meters === "" || meters == null || Number.isNaN(n) ? null : Math.round(n * 3.28084);
+};
+
+const formatFeet = (meters) => {
+    const ft = toFeet(meters);
+    return ft == null ? "—" : ft.toLocaleString();
+};
+
+const renderPercent = (value, kind) =>
+    value === "" || value == null ? (
+        <span className="pct-empty">—</span>
+    ) : (
+        <span className={`pct-chip pct-${kind}`}>{value}%</span>
+    );
 
 const Resorts = () => {
     const [resorts, setResorts] = useState([]);
@@ -38,19 +54,16 @@ const Resorts = () => {
     }, []);
 
     const columnMappings = {
-        "Resort ID": "resortID",
         "Resort Name": "resort_name",
         "State": "state_name",
-        "Summit (meters)": "summit",
-        "Base (meters)": "base",
+        "Summit (ft)": "summit",
+        "Base (ft)": "base",
         "Lifts": "lifts",
         "Runs": "runs",
         "Green %": "green_percent",
         "Blue %": "blue_percent",
         "Black %": "black_percent",
         "Double Black %": "double_black_percent",
-        "Latitude": "lat",
-        "Longitude": "lon",
     };
 
     const handleSort = (columnName) => {
@@ -81,8 +94,8 @@ const Resorts = () => {
         );
     };
 
-    if (loading) return <p>Loading resorts data...</p>;
-    if (error) return <p>{error}</p>;
+    if (loading) return <p style={{ textAlign: "center" }}>Loading resorts data...</p>;
+    if (error) return <p style={{ textAlign: "center" }}>{error}</p>;
 
     return (
         <div className="resort-parent-container">
@@ -106,29 +119,26 @@ const Resorts = () => {
                         {resorts.length > 0 ? (
                             resorts.map((resort) => (
                                 <tr key={resort.resortID}>
-                                    <td>{resort.resortID}</td>
                                     <td>{resort.resort_name}</td>
                                     <td>{resort.state_name}</td>
-                                    <td>{resort.summit}</td>
-                                    <td>{resort.base}</td>
+                                    <td>{formatFeet(resort.summit)}</td>
+                                    <td>{formatFeet(resort.base)}</td>
                                     <td>{resort.lifts}</td>
                                     <td>{resort.runs}</td>
-                                    <td>{resort.green_percent}</td>
-                                    <td>{resort.blue_percent}</td>
-                                    <td>{resort.black_percent}</td>
-                                    <td>{resort.double_black_percent}</td>
-                                    <td>{resort.lat}</td>
-                                    <td>{resort.lon}</td>
+                                    <td>{renderPercent(resort.green_percent, "green")}</td>
+                                    <td>{renderPercent(resort.blue_percent, "blue")}</td>
+                                    <td>{renderPercent(resort.black_percent, "black")}</td>
+                                    <td>{renderPercent(resort.double_black_percent, "dblack")}</td>
                                 </tr>
                             ))
                         ) : (
-                            <tr><td colSpan="13">No data available</td></tr>
+                            <tr><td colSpan="10">No data available</td></tr>
                         )}
                     </tbody>
                 </table>
             </div>
         </div>
-            );
+    );
 };
 
 export default Resorts;
