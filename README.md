@@ -2,6 +2,14 @@
 
 A full-stack web app for exploring ski resorts — browse resorts on an interactive map and compare stats like summit/base elevation, lifts, runs, and trail difficulty breakdowns.
 
+![Ski Resort Explorer home page](docs/screenshot.png)
+
+## Demo
+
+Search, the interactive resort map, and a resort detail page with live weather:
+
+![Animated demo: searching resorts, browsing the map, and opening a resort detail page](docs/demo.gif)
+
 ## Tech stack
 
 - **Frontend** ([client/](client)): React 19 + Vite, Material UI, React Router, Leaflet maps
@@ -46,5 +54,3 @@ npm run dev            # runs on http://localhost:5173
 ```
 
 Client environment variables (in `client/.env`): `VITE_WEATHER_API_KEY` (OpenWeather key for the weather panel and radar map) and `VITE_API_BASE_URL` (Flask API origin, defaults to `http://localhost:8080`).
-
-(Insert screenshot here later)
