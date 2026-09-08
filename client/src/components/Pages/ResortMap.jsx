@@ -61,6 +61,11 @@ const ResortMap = () => {
                     minHeight: 420,
                     borderRadius: 2,
                     overflow: "hidden",
+                    // OSM only ships a light style; invert the tile pane for dark
+                    // mode. Markers and popups live in other panes and are unaffected.
+                    "& .leaflet-tile-pane": dark
+                        ? { filter: "invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.5)" }
+                        : {},
                 }}
             >
                 <MapContainer
@@ -70,13 +75,8 @@ const ResortMap = () => {
                     style={{ height: "100%", width: "100%" }}
                 >
                     <TileLayer
-                        key={dark ? "dark" : "light"}
-                        url={
-                            dark
-                                ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                                : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                        }
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     />
                     {located.map((resort) => {
                         const summitFt = toFeet(resort.summit);
