@@ -13,7 +13,7 @@ Search, the interactive resort map, and a resort detail page with live weather:
 ## Tech stack
 
 - **Frontend** ([client/](client)): React 19 + Vite, Material UI, React Router, Leaflet maps
-- **Backend** ([server/](server)): Flask REST API backed by MySQL
+- **Backend** ([server/](server)): Flask REST API backed by MySQL, plus a server-side proxy for OpenWeather (current conditions and radar tiles) so the API key never reaches the browser
 
 ## API endpoints
 
@@ -21,7 +21,10 @@ Search, the interactive resort map, and a resort detail page with live weather:
 | --- | --- |
 | `GET /api/resorts` | All ski resorts |
 | `GET /api/resorts/<id>` | A single resort by ID |
+| `GET /api/weather?lat=<lat>&lon=<lon>` | Current conditions from OpenWeather (imperial units), proxied server-side |
+| `GET /api/weather/tiles/<z>/<x>/<y>.png` | OpenWeather precipitation radar tile for the detail-page map, proxied server-side |
 
+The weather endpoints return `503` if `OPENWEATHER_API_KEY` is not set, `400` for invalid coordinates, and `502` if OpenWeather is unreachable. The upstream status is logged on the server but never exposed to clients.
 
 ## Running locally
 
@@ -43,7 +46,10 @@ pip install -r requirements.txt
 python main.py         # runs on http://localhost:8080
 ```
 
-Server environment variables (in `server/.env`): `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (defaults to a local MySQL database named `SkiResorts`) and `OPENWEATHER_API_KEY`. The OpenWeather key stays on the server: the React app calls `/api/weather` and `/api/weather/tiles/{z}/{x}/{y}.png`, and Flask forwards those requests upstream, so the key is never shipped to the browser.
+Server environment variables (in `server/.env`, see [server/.env.example](server/.env.example)):
+
+- `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` — MySQL connection (defaults to a local database named `SkiResorts`)
+- `OPENWEATHER_API_KEY` — OpenWeather key for the weather panel and radar map. It is only ever read by Flask; the React app calls the `/api/weather` routes and Flask forwards the request upstream. Without it the app still runs, but the resort detail page shows a weather error instead of conditions.
 
 ### Frontend
 
