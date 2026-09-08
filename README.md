@@ -19,8 +19,8 @@ Search, the interactive resort map, and a resort detail page with live weather:
 
 | Endpoint | Description |
 | --- | --- |
-| `GET /api/resorts` | All ski resorts |
-| `GET /api/resorts/<id>` | A single resort by ID |
+| `GET /api/resorts` | All ski resorts. Optional filters: `?q=` (case-insensitive substring match on name or location) and `?state=` (exact location match), e.g. `/api/resorts?q=vail` or `/api/resorts?state=Utah` |
+| `GET /api/resorts/<id>` | A single resort by ID. Returns `404` for a malformed or unknown id |
 | `GET /api/weather?lat=<lat>&lon=<lon>` | Current conditions from OpenWeather (imperial units), proxied server-side |
 | `GET /api/weather/tiles/<z>/<x>/<y>.png` | OpenWeather precipitation radar tile for the detail-page map, proxied server-side |
 

@@ -63,30 +63,53 @@ def resorts_response(result):
     """Build a JSON response, using 500 when the fetch produced an error."""
     return jsonify(result), (500 if "error" in result else 200)
 
+RESORT_SELECT = """
+    SELECT DISTINCT sr.resortID, sr.resort_name, st.state_name, sr.summit, sr.base, sr.lifts,
+           sr.runs, sr.green_percent, sr.blue_percent, sr.black_percent, sr.double_black_percent,
+           sr.lat, sr.lon, sr.url
+    FROM ski_resorts sr
+    JOIN states_terr st ON sr.stateID = st.stateID
+"""
+
+def escape_like(text):
+    """Escape LIKE wildcards so user input matches literally. Pair with ESCAPE '!'."""
+    return text.replace("!", "!!").replace("%", "!%").replace("_", "!_")
+
 @app.route("/api/resorts", methods=['GET'])
 def get_resorts():
-    """Fetch all ski resorts."""
-    query = """
-        SELECT DISTINCT sr.resortID, sr.resort_name, st.state_name, sr.summit, sr.base, sr.lifts,
-               sr.runs, sr.green_percent, sr.blue_percent, sr.black_percent, sr.double_black_percent,
-               sr.lat, sr.lon, sr.url
-        FROM ski_resorts sr
-        JOIN states_terr st ON sr.stateID = st.stateID;
+    """Fetch ski resorts, optionally filtered.
+
+    Query parameters (both optional, combined with AND):
+      q      case-insensitive substring match on resort name or location
+      state  exact (case-insensitive) match on location, e.g. state=Colorado
     """
-    result = fetch_resorts(query)
+    conditions, params = [], []
+    q = request.args.get("q", "").strip()
+    if q:
+        pattern = f"%{escape_like(q)}%"
+        conditions.append("(sr.resort_name LIKE %s ESCAPE '!' OR st.state_name LIKE %s ESCAPE '!')")
+        params.extend([pattern, pattern])
+    state = request.args.get("state", "").strip()
+    if state:
+        conditions.append("st.state_name = %s")
+        params.append(state)
+
+    query = RESORT_SELECT
+    if conditions:
+        query += "    WHERE " + " AND ".join(conditions) + "\n"
+    query += "    ORDER BY sr.resort_name;"
+    result = fetch_resorts(query, tuple(params))
     return resorts_response(result)
 
 @app.route("/api/resorts/<int:resort_id>", methods=['GET'])
 def get_resort(resort_id):
-    """Fetch a single ski resort by ID."""
-    query = """
-        SELECT DISTINCT sr.resortID, sr.resort_name, st.state_name, sr.summit, sr.base, sr.lifts,
-               sr.runs, sr.green_percent, sr.blue_percent, sr.black_percent, sr.double_black_percent,
-               sr.lat, sr.lon, sr.url
-        FROM ski_resorts sr
-        JOIN states_terr st ON sr.stateID = st.stateID
-        WHERE sr.resortID = %s;
+    """Fetch a single ski resort by ID.
+
+    The <int:> converter only matches non-negative integers, so malformed ids
+    such as /api/resorts/abc or /api/resorts/-1 are rejected with a 404 before
+    this handler runs. A well-formed id with no matching row also returns 404.
     """
+    query = RESORT_SELECT + "    WHERE sr.resortID = %s;"
     result = fetch_resorts(query, (resort_id,))
     if "error" in result:
         return jsonify(result), 500
