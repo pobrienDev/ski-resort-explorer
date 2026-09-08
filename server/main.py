@@ -95,34 +95,6 @@ def get_resort(resort_id):
         return jsonify({"error": "Resort not found"}), 404
     return jsonify({"resort": resorts[0]}), 200
 
-@app.route("/api/colorado", methods=['GET'])
-def get_co_resorts():
-    """Fetch all ski resorts in Colorado (stateID = 4)."""
-    query = """
-        SELECT DISTINCT sr.resortID, sr.resort_name, st.state_name, sr.summit, sr.base, sr.lifts,
-               sr.runs, sr.green_percent, sr.blue_percent, sr.black_percent, sr.double_black_percent,
-               sr.lat, sr.lon, sr.url
-        FROM ski_resorts sr
-        INNER JOIN states_terr st ON sr.stateID = st.stateID
-        WHERE sr.stateID = %s;
-    """
-    result = fetch_resorts(query, (4,))
-    return resorts_response(result)
-
-@app.route("/api/utah", methods=['GET'])
-def get_ut_resorts():
-    """Fetch all ski resorts in Utah (stateID = 29)."""
-    query = """
-        SELECT DISTINCT sr.resortID, sr.resort_name, st.state_name, sr.summit, sr.base, sr.lifts,
-               sr.runs, sr.green_percent, sr.blue_percent, sr.black_percent, sr.double_black_percent,
-               sr.lat, sr.lon, sr.url
-        FROM ski_resorts sr
-        INNER JOIN states_terr st ON sr.stateID = st.stateID
-        WHERE sr.stateID = %s;
-    """
-    result = fetch_resorts(query, (29,))
-    return resorts_response(result)
-
 def weather_not_configured():
     """503 response used when OPENWEATHER_API_KEY is missing."""
     return jsonify({"error": "Weather service is not configured"}), 503
