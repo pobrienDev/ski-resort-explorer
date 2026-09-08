@@ -16,8 +16,6 @@ import "leaflet/dist/leaflet.css";  // Import Leaflet styles
 import DifficultyBar from "../General/DifficultyBar";
 import { API_BASE } from "../../api";
 
-const API_KEY = import.meta.env.VITE_WEATHER_API_KEY;  // OpenWeather API key — set in client/.env
-
 const toFeet = (meters) => {
     const n = Number(meters);
     return meters === "" || meters == null || Number.isNaN(n) ? null : Math.round(n * 3.28084);
@@ -59,13 +57,9 @@ const ResortDetail = () => {
             const fetchWeather = async () => {
                 try {
                     setWeatherError(false);
-                    const response = await axios.get(`https://api.openweathermap.org/data/2.5/weather`, {
-                        params: {
-                            lat: resort.lat,
-                            lon: resort.lon,
-                            units: "imperial",
-                            appid: API_KEY
-                        }
+                    // Flask proxies this to OpenWeather; the API key never reaches the browser.
+                    const response = await axios.get(`${API_BASE}/api/weather`, {
+                        params: { lat: resort.lat, lon: resort.lon }
                     });
                     setWeather(response.data);
                 } catch {
@@ -178,7 +172,7 @@ const ResortDetail = () => {
                                 attribution="&copy; OpenStreetMap contributors"
                             />
                             <TileLayer
-                                url={`https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=${API_KEY}`}
+                                url={`${API_BASE}/api/weather/tiles/{z}/{x}/{y}.png`}
                                 attribution="&copy; OpenWeather"
                             />
                         </MapContainer>

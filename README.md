@@ -38,19 +38,19 @@ mysql -u root SkiResorts < server/skiresorts.sql
 
 ```bash
 cd server
+cp .env.example .env   # then fill in your OpenWeather API key
 pip install -r requirements.txt
-python main.py   # runs on http://localhost:8080
+python main.py         # runs on http://localhost:8080
 ```
 
-Database connection is configured via environment variables (or a `.env` file in `server/`): `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (defaults to a local MySQL database named `SkiResorts`).
+Server environment variables (in `server/.env`): `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` (defaults to a local MySQL database named `SkiResorts`) and `OPENWEATHER_API_KEY`. The OpenWeather key stays on the server: the React app calls `/api/weather` and `/api/weather/tiles/{z}/{x}/{y}.png`, and Flask forwards those requests upstream, so the key is never shipped to the browser.
 
 ### Frontend
 
 ```bash
 cd client
-cp .env.example .env   # then fill in your OpenWeather API key
 npm install
 npm run dev            # runs on http://localhost:5173
 ```
 
-Client environment variables (in `client/.env`): `VITE_WEATHER_API_KEY` (OpenWeather key for the weather panel and radar map) and `VITE_API_BASE_URL` (Flask API origin, defaults to `http://localhost:8080`).
+Client environment variables (optional, in `client/.env`): `VITE_API_BASE_URL` (Flask API origin, defaults to `http://localhost:8080`). Never put the OpenWeather key here; anything prefixed `VITE_` is compiled into the public JavaScript bundle.
