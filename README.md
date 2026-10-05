@@ -50,6 +50,8 @@ Server environment variables (in `server/.env`, see [server/.env.example](server
 
 - `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` — MySQL connection (defaults to a local database named `SkiResorts`)
 - `OPENWEATHER_API_KEY` — OpenWeather key for the weather panel and radar map. It is only ever read by Flask; the React app calls the `/api/weather` routes and Flask forwards the request upstream. Without it the app still runs, but the resort detail page shows a weather error instead of conditions.
+- `CORS_ORIGINS` — optional, comma-separated. Leave unset for local development: the Vite dev server proxies `/api` to Flask, so the browser never makes a cross-origin request. Set it only when a separately hosted frontend calls the API directly.
+- `FLASK_DEBUG` — defaults to `1` (debug reloader on). Set to `0` to run without it.
 
 ### Frontend
 
@@ -59,4 +61,6 @@ npm install
 npm run dev            # runs on http://localhost:5173
 ```
 
-Client environment variables (optional, in `client/.env`): `VITE_API_BASE_URL` (Flask API origin, defaults to `http://localhost:8080`). Never put the OpenWeather key here; anything prefixed `VITE_` is compiled into the public JavaScript bundle.
+In development the Vite dev server proxies every `/api/*` request to Flask at `http://localhost:8080` (see [client/vite.config.js](client/vite.config.js)), so the React app uses relative URLs and no CORS setup is needed.
+
+Client environment variables (optional, in `client/.env`, see [client/.env.example](client/.env.example)): `VITE_API_BASE_URL`. Leave it unset in development unless Flask runs on a different host or port, in which case the proxy target follows it. For a production build set it to the public API origin, since there is no proxy in front of `dist/`. Never put the OpenWeather key here; anything prefixed `VITE_` is compiled into the public JavaScript bundle.

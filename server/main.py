@@ -13,7 +13,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 log = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app, origins='*')
+
+# In development the Vite dev server proxies /api to Flask, so the browser never
+# makes a cross-origin request and no CORS headers are needed. Set CORS_ORIGINS
+# (comma-separated) only when a separately hosted frontend calls this API directly.
+cors_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+if cors_origins:
+    CORS(app, origins=cors_origins)
 
 # Database Configuration
 DB_CONFIG = {
@@ -185,4 +191,4 @@ def get_weather_tile(z, x, y):
     )
 
 if __name__ == "__main__":
-    app.run(debug=True, port=8080)
+    app.run(debug=os.getenv("FLASK_DEBUG", "1") == "1", port=int(os.getenv("PORT", "8080")))

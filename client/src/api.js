@@ -1,3 +1,7 @@
-// Base URL for the Flask API. Override with VITE_API_BASE_URL in client/.env
-// when the backend is not on localhost:8080 (e.g. LAN access or production).
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
+// Base URL for the Flask API.
+//
+// In development it is always empty: requests go to relative /api/* paths and
+// the Vite dev server proxies them to Flask (see vite.config.js, which uses
+// VITE_API_BASE_URL as the proxy target). In a production build there is no
+// proxy, so VITE_API_BASE_URL must point at the public API origin.
+export const API_BASE = import.meta.env.DEV ? "" : import.meta.env.VITE_API_BASE_URL || "";
