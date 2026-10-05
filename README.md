@@ -30,7 +30,7 @@ The weather endpoints return `503` if `OPENWEATHER_API_KEY` is not set, `400` fo
 
 ### Database
 
-Requires a local MySQL server. Create the database and import the included dump (schema + all resort data):
+Requires a local MySQL server. Create the database and import the included dump (schema + all resort data). Every resort row records the page its stats were checked against (`source_url`) and the date (`verified_on`); elevations are stored in metres and `vertical` is the resort's published lift-served vertical drop, which can differ from summit minus base.
 
 ```bash
 mysql -u root -e "CREATE DATABASE SkiResorts"

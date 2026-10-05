@@ -18,6 +18,14 @@ import { API_BASE } from "../../api";
 import { toFeet, formatFeet } from "../../utils/units";
 
 
+// The API serializes DATE columns in RFC 1123 form ("Mon, 05 Oct 2026 00:00:00 GMT").
+const formatVerifiedOn = (value) => {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime())
+        ? value
+        : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
+};
+
 const ResortDetail = () => {
     const { resortID } = useParams();
     const [resort, setResort] = useState(null);
@@ -88,15 +96,15 @@ const ResortDetail = () => {
         );
     }
 
-    const summitFt = toFeet(resort.summit);
-    const baseFt = toFeet(resort.base);
-    const verticalFt = summitFt != null && baseFt != null ? summitFt - baseFt : null;
+    // Vertical is the resort's published lift-served drop, which can differ
+    // from summit minus base (e.g. where the summit is not lift-served).
     const stats = [
-        { label: "Summit", value: formatFeet(summitFt, { unit: true }) },
-        { label: "Base", value: formatFeet(baseFt, { unit: true }) },
-        { label: "Vertical drop", value: formatFeet(verticalFt, { unit: true }) },
+        { label: "Summit", value: formatFeet(toFeet(resort.summit), { unit: true }) },
+        { label: "Base", value: formatFeet(toFeet(resort.base), { unit: true }) },
+        { label: "Vertical drop", value: formatFeet(toFeet(resort.vertical), { unit: true }) },
         { label: "Lifts", value: resort.lifts ?? "—" },
         { label: "Runs", value: resort.runs ?? "—" },
+        { label: "Skiable acres", value: resort.acres != null ? resort.acres.toLocaleString() : "—" },
     ];
 
     return (
@@ -116,7 +124,7 @@ const ResortDetail = () => {
                 <Box
                     sx={{
                         display: "grid",
-                        gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)", md: "repeat(5, 1fr)" },
+                        gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)", md: "repeat(6, 1fr)" },
                         gap: 2,
                     }}
                 >
@@ -136,6 +144,16 @@ const ResortDetail = () => {
                     Trail difficulty
                 </Typography>
                 <DifficultyBar resort={resort} height={10} showLegend sx={{ mt: 0.5 }} />
+
+                {resort.source_url && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 2 }}>
+                        Stats verified against{" "}
+                        <Link href={resort.source_url} target="_blank" rel="noopener noreferrer">
+                            {new URL(resort.source_url).hostname.replace(/^www\./, "")}
+                        </Link>
+                        {resort.verified_on && ` on ${formatVerifiedOn(resort.verified_on)}`}
+                    </Typography>
+                )}
             </Paper>
 
             <Button variant="contained" onClick={() => setShowMore((prev) => !prev)} sx={{ mt: 3 }}>

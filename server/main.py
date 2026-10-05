@@ -75,9 +75,9 @@ def resorts_response(result):
     return jsonify(result), (500 if "error" in result else 200)
 
 RESORT_SELECT = """
-    SELECT DISTINCT sr.resortID, sr.resort_name, st.state_name, sr.summit, sr.base, sr.lifts,
-           sr.runs, sr.green_percent, sr.blue_percent, sr.black_percent, sr.double_black_percent,
-           sr.lat, sr.lon, sr.url
+    SELECT DISTINCT sr.resortID, sr.resort_name, st.state_name, sr.summit, sr.base, sr.vertical,
+           sr.lifts, sr.runs, sr.acres, sr.green_percent, sr.blue_percent, sr.black_percent,
+           sr.double_black_percent, sr.lat, sr.lon, sr.url, sr.source_url, sr.verified_on
     FROM ski_resorts sr
     JOIN states_terr st ON sr.stateID = st.stateID
 """
