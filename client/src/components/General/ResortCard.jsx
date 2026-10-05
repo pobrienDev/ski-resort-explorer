@@ -1,11 +1,7 @@
 import { Card, CardContent, CardActions, Typography, Button, Chip, Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import DifficultyBar from "./DifficultyBar";
-
-const toFeet = (meters) => {
-    const n = Number(meters);
-    return meters === "" || meters == null || Number.isNaN(n) ? null : Math.round(n * 3.28084);
-};
+import { toFeet } from "../../utils/units";
 
 const ResortCard = ({ resort }) => {
     const navigate = useNavigate();

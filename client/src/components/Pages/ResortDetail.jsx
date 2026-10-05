@@ -15,13 +15,8 @@ import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";  // Import Leaflet styles
 import DifficultyBar from "../General/DifficultyBar";
 import { API_BASE } from "../../api";
+import { toFeet, formatFeet } from "../../utils/units";
 
-const toFeet = (meters) => {
-    const n = Number(meters);
-    return meters === "" || meters == null || Number.isNaN(n) ? null : Math.round(n * 3.28084);
-};
-
-const formatFeet = (ft) => (ft == null ? "—" : `${ft.toLocaleString()} ft`);
 
 const ResortDetail = () => {
     const { resortID } = useParams();
@@ -97,9 +92,9 @@ const ResortDetail = () => {
     const baseFt = toFeet(resort.base);
     const verticalFt = summitFt != null && baseFt != null ? summitFt - baseFt : null;
     const stats = [
-        { label: "Summit", value: formatFeet(summitFt) },
-        { label: "Base", value: formatFeet(baseFt) },
-        { label: "Vertical drop", value: formatFeet(verticalFt) },
+        { label: "Summit", value: formatFeet(summitFt, { unit: true }) },
+        { label: "Base", value: formatFeet(baseFt, { unit: true }) },
+        { label: "Vertical drop", value: formatFeet(verticalFt, { unit: true }) },
         { label: "Lifts", value: resort.lifts ?? "—" },
         { label: "Runs", value: resort.runs ?? "—" },
     ];

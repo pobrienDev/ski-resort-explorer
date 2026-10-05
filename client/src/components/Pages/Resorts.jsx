@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./Resorts.css"; // Import the CSS file for the table styling
 import { API_BASE } from "../../api";
+import { toFeet, formatFeet } from "../../utils/units";
 
 // The API serializes DECIMAL columns as strings (e.g. "1200.610"), and cells
 // can be NULL/empty — normalize before comparing so sorting stays numeric.
@@ -11,15 +12,8 @@ const toComparable = (value) => {
     return Number.isNaN(num) ? value.toString() : num;
 };
 
-const toFeet = (meters) => {
-    const n = Number(meters);
-    return meters === "" || meters == null || Number.isNaN(n) ? null : Math.round(n * 3.28084);
-};
 
-const formatFeet = (meters) => {
-    const ft = toFeet(meters);
-    return ft == null ? "—" : ft.toLocaleString();
-};
+const formatMetersAsFeet = (meters) => formatFeet(toFeet(meters));
 
 const renderPercent = (value, kind) =>
     value === "" || value == null ? (
@@ -121,8 +115,8 @@ const Resorts = () => {
                                 <tr key={resort.resortID}>
                                     <td>{resort.resort_name}</td>
                                     <td>{resort.state_name}</td>
-                                    <td>{formatFeet(resort.summit)}</td>
-                                    <td>{formatFeet(resort.base)}</td>
+                                    <td>{formatMetersAsFeet(resort.summit)}</td>
+                                    <td>{formatMetersAsFeet(resort.base)}</td>
                                     <td>{resort.lifts}</td>
                                     <td>{resort.runs}</td>
                                     <td>{renderPercent(resort.green_percent, "green")}</td>

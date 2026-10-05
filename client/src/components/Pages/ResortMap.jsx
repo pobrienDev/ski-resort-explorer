@@ -5,11 +5,7 @@ import { Box, Typography, Button, CircularProgress, useTheme } from "@mui/materi
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { API_BASE } from "../../api";
-
-const toFeet = (meters) => {
-    const n = Number(meters);
-    return meters === "" || meters == null || Number.isNaN(n) ? null : Math.round(n * 3.28084);
-};
+import { toFeet } from "../../utils/units";
 
 const hasCoords = (resort) =>
     resort.lat !== "" && resort.lat != null && resort.lon !== "" && resort.lon != null &&

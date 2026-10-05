@@ -1,12 +1,12 @@
-# React + Vite
+# Ski Resort Explorer — client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + Vite frontend for the Ski Resort Explorer. See the [root README](../README.md) for the full setup, including the Flask API and MySQL database this app talks to.
 
-Currently, two official plugins are available:
+```bash
+npm install
+npm run dev      # http://localhost:5173, proxies /api to the Flask server
+npm run lint
+npm run build    # outputs to dist/
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+In development, Vite proxies `/api/*` to the Flask server (default `http://localhost:8080`, override with `VITE_API_BASE_URL` in `.env`). For a production build, set `VITE_API_BASE_URL` to the API origin and serve `dist/` from any static host.

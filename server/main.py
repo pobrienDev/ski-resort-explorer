@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
+import logging
 import mysql.connector
 import os
 import requests
@@ -7,6 +8,9 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+log = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app, origins='*')
@@ -31,7 +35,7 @@ def get_db_connection():
     try:
         return mysql.connector.connect(**DB_CONFIG)
     except mysql.connector.Error as err:
-        print(f"[ERROR] Database connection failed: {err}")
+        log.error("Database connection failed: %s", err)
         return None
 
 def fetch_resorts(query, params=None):
@@ -40,6 +44,7 @@ def fetch_resorts(query, params=None):
     if conn is None:
         return {"error": "Database connection failed"}
 
+    cursor = None
     try:
         cursor = conn.cursor(dictionary=True)
         cursor.execute(query, params or ())
@@ -51,13 +56,13 @@ def fetch_resorts(query, params=None):
 
         return {"resorts": resorts}  # Return as a dict
     except mysql.connector.Error as err:
-        print(f"[ERROR] Database query failed: {err}")
-        return {"error": "Database query failed", "details": str(err)}
+        # Log the real error server-side; never echo driver messages to clients.
+        log.error("Database query failed: %s", err)
+        return {"error": "Database query failed"}
     finally:
-        if 'cursor' in locals():
+        if cursor is not None:
             cursor.close()
-        if 'conn' in locals():
-            conn.close()
+        conn.close()
 
 def resorts_response(result):
     """Build a JSON response, using 500 when the fetch produced an error."""
@@ -131,11 +136,11 @@ def fetch_openweather(url, params):
             timeout=OPENWEATHER_TIMEOUT_SECONDS,
         )
     except requests.RequestException as err:
-        print(f"[ERROR] OpenWeather request failed: {err}")
+        log.error("OpenWeather request failed: %s", err)
         return None
     if upstream.status_code != 200:
         # Log the real status (401 = bad key, 429 = quota) but never expose it to the browser.
-        print(f"[ERROR] OpenWeather returned {upstream.status_code} for {url}")
+        log.error("OpenWeather returned %s for %s", upstream.status_code, url)
         return None
     return upstream
 
