@@ -6,6 +6,7 @@ React 19 + Vite frontend for the Ski Resort Explorer. See the [root README](../R
 npm install
 npm run dev      # http://localhost:5173, proxies /api to the Flask server
 npm run lint
+npm test         # vitest
 npm run build    # outputs to dist/
 ```
 

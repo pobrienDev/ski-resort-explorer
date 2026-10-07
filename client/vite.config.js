@@ -6,6 +6,10 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
     plugins: [react()],
+    test: {
+      environment: 'jsdom',
+      setupFiles: './src/test/setup.js',
+    },
     server: {
       // Honor PORT when a tool assigns one; otherwise Vite's default 5173.
       port: Number(process.env.PORT) || 5173,

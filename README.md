@@ -63,4 +63,23 @@ npm run dev            # runs on http://localhost:5173
 
 In development the Vite dev server proxies every `/api/*` request to Flask at `http://localhost:8080` (see [client/vite.config.js](client/vite.config.js)), so the React app uses relative URLs and no CORS setup is needed.
 
+## Tests
+
+Both suites run in CI on every push (see [.github/workflows/ci.yml](.github/workflows/ci.yml)).
+
+Server, from `server/`:
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+The unit tests mock the database. The integration tests load `skiresorts.sql` into a throwaway database (`TEST_DB_NAME`, default `SkiResorts_test`) on the MySQL server named by `DB_HOST` / `DB_USER` / `DB_PASSWORD`, run data integrity checks (every row sourced, summit above base, ratings sum to about 100%, coordinates inside the resort's country, and so on), and exercise the API against it. They are skipped when no MySQL server is reachable; run `python -m pytest -m "not integration"` to skip them explicitly.
+
+Client, from `client/`:
+
+```bash
+npm test
+```
+
 Client environment variables (optional, in `client/.env`, see [client/.env.example](client/.env.example)): `VITE_API_BASE_URL`. Leave it unset in development unless Flask runs on a different host or port, in which case the proxy target follows it. For a production build set it to the public API origin, since there is no proxy in front of `dist/`. Never put the OpenWeather key here; anything prefixed `VITE_` is compiled into the public JavaScript bundle.
