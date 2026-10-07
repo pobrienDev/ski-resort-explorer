@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
     Box,
     Chip,
@@ -88,8 +88,13 @@ const PercentChip = ({ value, segment }) => {
 const Resorts = () => {
     const { resorts, loading, error } = useResorts();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [query, setQuery] = useState("");
-    const [location, setLocation] = useState("");
+    // The location filter lives in the URL so the detail page can link to it
+    // and the choice survives a reload.
+    const location = searchParams.get("location") ?? "";
+    const setLocation = (value) =>
+        setSearchParams(value ? { location: value } : {}, { replace: true });
     const [sort, setSort] = useState({ key: "resort_name", direction: "asc" });
 
     const locations = useMemo(

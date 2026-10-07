@@ -1,6 +1,16 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// Flask's dev server binds 127.0.0.1 (IPv4 only), but Node may resolve
+// "localhost" to ::1 first, which can be a different listener entirely (for
+// example a Docker-published port). Pin the proxy target to IPv4 so a
+// "localhost" setting always reaches the local Flask.
+const apiTarget = (configured) => {
+  const url = new URL(configured || 'http://127.0.0.1:8080')
+  if (url.hostname === 'localhost') url.hostname = '127.0.0.1'
+  return url.origin
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
@@ -17,7 +27,7 @@ export default defineConfig(({ mode }) => {
       // origin in development. No CORS needed.
       proxy: {
         '/api': {
-          target: env.VITE_API_BASE_URL || 'http://localhost:8080',
+          target: apiTarget(env.VITE_API_BASE_URL),
           changeOrigin: true,
         },
       },

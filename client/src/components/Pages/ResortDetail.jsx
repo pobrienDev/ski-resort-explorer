@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link as RouterLink } from "react-router-dom";
 import {
     Container,
     Typography,
@@ -9,6 +9,7 @@ import {
     Paper,
     Link,
     CircularProgress,
+    useTheme,
 } from "@mui/material";
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";  // Import Leaflet styles
@@ -26,6 +27,21 @@ const formatVerifiedOn = (value) => {
         : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
 };
 
+// OSM only ships a light style; invert the tile pane for dark mode. The radar
+// overlay and controls live in other panes and are unaffected.
+const darkTileFilter = {
+    "& .leaflet-tile-pane": {
+        filter: "invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.5)",
+    },
+    // The radar overlay sits in the tile pane too; lift it back out of the inversion.
+    "& .leaflet-tile-pane .radar-overlay": { filter: "invert(1) hue-rotate(180deg)" },
+};
+
+const hasRatings = (resort) =>
+    ["green_percent", "blue_percent", "black_percent", "double_black_percent"].some(
+        (k) => resort[k] != null && resort[k] !== "" && Number(resort[k]) > 0,
+    );
+
 const ResortDetail = () => {
     const { resortID } = useParams();
     const { resort, loading, error } = useResort(resortID);
@@ -33,6 +49,14 @@ const ResortDetail = () => {
     // Weather is cached per resort so toggling the panel does not refetch.
     const [weather, setWeather] = useState({ forID: null, data: null, failed: false });
     const navigate = useNavigate();
+    const dark = useTheme().palette.mode === "dark";
+
+    // React Router records an index in history state; 0 means this page was
+    // opened directly, so "back" would leave the site. Go home instead.
+    const goBack = () => {
+        if ((window.history.state?.idx ?? 0) > 0) navigate(-1);
+        else navigate("/");
+    };
 
     useEffect(() => {
         if (!showMore || !resort || weather.forID === resort.resortID) return;
@@ -81,7 +105,7 @@ const ResortDetail = () => {
 
     return (
         <Container maxWidth="md" sx={{ pb: 6 }}>
-            <Button onClick={() => navigate(-1)} sx={{ mb: 1 }}>
+            <Button onClick={goBack} sx={{ mb: 1 }}>
                 ← Back
             </Button>
 
@@ -89,7 +113,25 @@ const ResortDetail = () => {
                 <Typography variant="h3" component="h1" sx={{ fontWeight: 700 }}>
                     {resort.resort_name}
                 </Typography>
-                <Chip label={resort.state_name} variant="outlined" />
+                <Chip
+                    label={resort.state_name}
+                    variant="outlined"
+                    component={RouterLink}
+                    to={`/resorts?location=${encodeURIComponent(resort.state_name)}`}
+                    clickable
+                />
+                {resort.url && (
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        href={resort.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{ ml: { sm: "auto" } }}
+                    >
+                        Official website ↗
+                    </Button>
+                )}
             </Box>
 
             <Paper variant="outlined" sx={{ mt: 3, p: 3 }}>
@@ -112,10 +154,14 @@ const ResortDetail = () => {
                     ))}
                 </Box>
 
-                <Typography variant="overline" color="text.secondary" sx={{ display: "block", mt: 3 }}>
-                    Trail difficulty
-                </Typography>
-                <DifficultyBar resort={resort} height={10} showLegend sx={{ mt: 0.5 }} />
+                {hasRatings(resort) && (
+                    <>
+                        <Typography variant="overline" color="text.secondary" sx={{ display: "block", mt: 3 }}>
+                            Trail difficulty
+                        </Typography>
+                        <DifficultyBar resort={resort} height={10} showLegend sx={{ mt: 0.5 }} />
+                    </>
+                )}
 
                 {resort.source_url && (
                     <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 2 }}>
@@ -146,7 +192,7 @@ const ResortDetail = () => {
                     <Typography variant="h6" sx={{ mt: 2 }}>
                         Weather radar
                     </Typography>
-                    <Box sx={{ mt: 1, borderRadius: 2, overflow: "hidden" }}>
+                    <Box sx={{ mt: 1, borderRadius: 2, overflow: "hidden", ...(dark ? darkTileFilter : {}) }}>
                         <MapContainer
                             center={[Number(resort.lat), Number(resort.lon)]}
                             zoom={7}
@@ -156,17 +202,10 @@ const ResortDetail = () => {
                                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                 attribution="&copy; OpenStreetMap contributors"
                             />
-                            <TileLayer url={WEATHER_TILE_URL} attribution="&copy; OpenWeather" />
+                            <TileLayer url={WEATHER_TILE_URL} attribution="&copy; OpenWeather" className="radar-overlay" />
                         </MapContainer>
                     </Box>
 
-                    {resort.url && (
-                        <Typography sx={{ mt: 2 }}>
-                            <Link href={resort.url} target="_blank" rel="noopener noreferrer" fontWeight={600}>
-                                Official resort website
-                            </Link>
-                        </Typography>
-                    )}
                 </Paper>
             )}
         </Container>

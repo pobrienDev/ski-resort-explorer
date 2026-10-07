@@ -26,7 +26,7 @@ beforeEach(() => {
   Object.assign(state, { resorts: ROWS, loading: false, error: null })
 })
 
-const renderPage = () => render(<MemoryRouter><Resorts /></MemoryRouter>)
+const renderPage = (route = '/resorts') => render(<MemoryRouter initialEntries={[route]}><Resorts /></MemoryRouter>)
 
 describe('Resorts table', () => {
   it('lists every resort sorted by name with a count', () => {
@@ -50,6 +50,12 @@ describe('Resorts table', () => {
     expect(screen.getByText('1 of 3 resorts')).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'zzz' } })
     expect(screen.getByText('No resorts match.')).toBeInTheDocument()
+  })
+
+  it('reads the location filter from the URL', () => {
+    renderPage('/resorts?location=Utah')
+    expect(bodyNames()).toEqual(['Alta Ski Area'])
+    expect(screen.getByText('1 of 3 resorts')).toBeInTheDocument()
   })
 
   it('toggles sort direction on a column header', () => {
