@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
     Container,
     Typography,
@@ -7,9 +7,8 @@ import {
     CircularProgress,
     useTheme,
 } from "@mui/material";
-import axios from "axios";
 import ResortCard from "../General/ResortCard";
-import { API_BASE } from "../../api";
+import { useResorts } from "../../data/useResorts";
 
 const HeroRidges = () => {
     const theme = useTheme();
@@ -42,31 +41,8 @@ const HeroRidges = () => {
 };
 
 function Home() {
-    const [resorts, setResorts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const { resorts, loading, error } = useResorts();
     const [searchTerm, setSearchTerm] = useState("");
-
-    useEffect(() => {
-        axios
-            .get(`${API_BASE}/api/resorts`)
-            .then((response) => {
-                if (response.data && Array.isArray(response.data.resorts)) {
-                    // Ensure unique resorts based on resortID
-                    const uniqueResorts = Array.from(
-                        new Map(response.data.resorts.map((resort) => [resort.resortID, resort])).values()
-                    );
-                    setResorts(uniqueResorts);
-                } else {
-                    setError("Invalid data format from the server.");
-                }
-                setLoading(false);
-            })
-            .catch(() => {
-                setError("Failed to load resorts. Please try again later.");
-                setLoading(false);
-            });
-    }, []);
 
     const query = searchTerm.trim().toLowerCase();
     const filtered = query

@@ -1,10 +1,8 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { Box, Typography, Button, CircularProgress, useTheme } from "@mui/material";
 import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { API_BASE } from "../../api";
+import { useResorts } from "../../data/useResorts";
 import { toFeet } from "../../utils/units";
 
 const hasCoords = (resort) =>
@@ -12,25 +10,10 @@ const hasCoords = (resort) =>
     !Number.isNaN(Number(resort.lat)) && !Number.isNaN(Number(resort.lon));
 
 const ResortMap = () => {
-    const [resorts, setResorts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const { resorts, loading, error } = useResorts();
     const navigate = useNavigate();
     const theme = useTheme();
     const dark = theme.palette.mode === "dark";
-
-    useEffect(() => {
-        axios
-            .get(`${API_BASE}/api/resorts`)
-            .then((response) => {
-                setResorts(Array.isArray(response.data.resorts) ? response.data.resorts : []);
-                setLoading(false);
-            })
-            .catch(() => {
-                setError("Failed to load resorts.");
-                setLoading(false);
-            });
-    }, []);
 
     if (loading) {
         return (

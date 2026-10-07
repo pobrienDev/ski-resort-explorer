@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
     Container,
     Typography,
@@ -14,7 +13,8 @@ import {
 import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";  // Import Leaflet styles
 import DifficultyBar from "../General/DifficultyBar";
-import { API_BASE } from "../../api";
+import { fetchWeather, WEATHER_TILE_URL } from "../../api";
+import { useResort } from "../../data/useResorts";
 import { toFeet, formatFeet } from "../../utils/units";
 
 
@@ -28,51 +28,23 @@ const formatVerifiedOn = (value) => {
 
 const ResortDetail = () => {
     const { resortID } = useParams();
-    const [resort, setResort] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const { resort, loading, error } = useResort(resortID);
     const [showMore, setShowMore] = useState(false);
-    const [weather, setWeather] = useState(null);
-    const [weatherError, setWeatherError] = useState(false);
+    // Weather is cached per resort so toggling the panel does not refetch.
+    const [weather, setWeather] = useState({ forID: null, data: null, failed: false });
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchResort = async () => {
-            try {
-                const response = await axios.get(`${API_BASE}/api/resorts/${resortID}`);
-                setResort(response.data.resort || null);
-            } catch (err) {
-                if (err.response && err.response.status === 404) {
-                    setResort(null);  // renders "Resort not found."
-                } else {
-                    setError("Failed to fetch resort data.");
-                }
-            } finally {
-                setLoading(false);
-            }
+        if (!showMore || !resort || weather.forID === resort.resortID) return;
+        let cancelled = false;
+        // Flask proxies this to OpenWeather; the API key never reaches the browser.
+        fetchWeather(resort.lat, resort.lon)
+            .then((data) => !cancelled && setWeather({ forID: resort.resortID, data, failed: false }))
+            .catch(() => !cancelled && setWeather({ forID: resort.resortID, data: null, failed: true }));
+        return () => {
+            cancelled = true;
         };
-
-        fetchResort();
-    }, [resortID]);
-
-    useEffect(() => {
-        if (showMore && resort) {
-            const fetchWeather = async () => {
-                try {
-                    setWeatherError(false);
-                    // Flask proxies this to OpenWeather; the API key never reaches the browser.
-                    const response = await axios.get(`${API_BASE}/api/weather`, {
-                        params: { lat: resort.lat, lon: resort.lon }
-                    });
-                    setWeather(response.data);
-                } catch {
-                    setWeatherError(true);
-                }
-            };
-
-            fetchWeather();
-        }
-    }, [showMore, resort]);
+    }, [showMore, resort, weather.forID]);
 
     if (loading) {
         return (
@@ -164,9 +136,9 @@ const ResortDetail = () => {
                 <Paper variant="outlined" sx={{ mt: 2, p: 3 }}>
                     <Typography>
                         <strong>Current weather: </strong>
-                        {weather
-                            ? `${weather.weather[0].description}, ${weather.main.temp}°F`
-                            : weatherError
+                        {weather.data && weather.forID === resort.resortID
+                            ? `${weather.data.weather?.[0]?.description ?? "Conditions unavailable"}, ${weather.data.main?.temp ?? "—"}°F`
+                            : weather.failed && weather.forID === resort.resortID
                                 ? "Weather is unavailable right now."
                                 : "Loading..."}
                     </Typography>
@@ -184,10 +156,7 @@ const ResortDetail = () => {
                                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                                 attribution="&copy; OpenStreetMap contributors"
                             />
-                            <TileLayer
-                                url={`${API_BASE}/api/weather/tiles/{z}/{x}/{y}.png`}
-                                attribution="&copy; OpenWeather"
-                            />
+                            <TileLayer url={WEATHER_TILE_URL} attribution="&copy; OpenWeather" />
                         </MapContainer>
                     </Box>
 

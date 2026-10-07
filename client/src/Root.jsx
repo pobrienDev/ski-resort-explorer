@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { ThemeProvider, createTheme, CssBaseline, useMediaQuery } from '@mui/material'
 import App from './App.jsx'
+import ResortsProvider from './data/ResortsProvider.jsx'
 
 const FONT_STACK =
   'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
@@ -31,7 +32,9 @@ export default function Root() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <App />
+      <ResortsProvider>
+        <App />
+      </ResortsProvider>
     </ThemeProvider>
   )
 }

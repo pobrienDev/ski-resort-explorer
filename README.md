@@ -12,7 +12,7 @@ Search, the interactive resort map, and a resort detail page with live weather:
 
 ## Tech stack
 
-- **Frontend** ([client/](client)): React 19 + Vite, Material UI, React Router, Leaflet maps
+- **Frontend** ([client/](client)): React 19 + Vite, Material UI, React Router, Leaflet maps. The resort list is fetched once by a shared provider ([client/src/data](client/src/data)) and reused by the home grid, table, map and detail pages.
 - **Backend** ([server/](server)): Flask REST API backed by MySQL, plus a server-side proxy for OpenWeather (current conditions and radar tiles) so the API key never reaches the browser
 
 ## API endpoints

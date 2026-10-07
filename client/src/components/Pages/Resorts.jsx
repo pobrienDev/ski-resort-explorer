@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { useMemo, useState } from "react";
 import "./Resorts.css"; // Import the CSS file for the table styling
-import { API_BASE } from "../../api";
+import { useResorts } from "../../data/useResorts";
 import { toFeet, formatFeet } from "../../utils/units";
 
 // The API serializes DECIMAL columns as strings (e.g. "1200.610"), and cells
@@ -23,29 +22,8 @@ const renderPercent = (value, kind) =>
     );
 
 const Resorts = () => {
-    const [resorts, setResorts] = useState([]);
+    const { resorts: allResorts, loading, error } = useResorts();
     const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-        const fetchResorts = async () => {
-            try {
-                const response = await axios.get(`${API_BASE}/api/resorts`);
-                if (Array.isArray(response.data.resorts)) {
-                    setResorts(response.data.resorts);
-                } else {
-                    setError("Data format is invalid.");
-                }
-            } catch {
-                setError("Failed to fetch resorts data.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchResorts();
-    }, []);
 
     const columnMappings = {
         "Resort Name": "resort_name",
@@ -69,24 +47,27 @@ const Resorts = () => {
             direction = "desc";
         }
         setSortConfig({ key, direction });
-
-        setResorts((prevResorts) =>
-            [...prevResorts].sort((a, b) => {
-                const aValue = toComparable(a[key]);
-                const bValue = toComparable(b[key]);
-
-                // Empty cells always sort last, regardless of direction
-                if (aValue === null) return bValue === null ? 0 : 1;
-                if (bValue === null) return -1;
-
-                const cmp =
-                    typeof aValue === "number" && typeof bValue === "number"
-                        ? aValue - bValue
-                        : aValue.toString().localeCompare(bValue.toString());
-                return direction === "asc" ? cmp : -cmp;
-            })
-        );
     };
+
+    // Derive the sorted view instead of mutating the shared list.
+    const resorts = useMemo(() => {
+        const { key, direction } = sortConfig;
+        if (!key) return allResorts;
+        return [...allResorts].sort((a, b) => {
+            const aValue = toComparable(a[key]);
+            const bValue = toComparable(b[key]);
+
+            // Empty cells always sort last, regardless of direction
+            if (aValue === null) return bValue === null ? 0 : 1;
+            if (bValue === null) return -1;
+
+            const cmp =
+                typeof aValue === "number" && typeof bValue === "number"
+                    ? aValue - bValue
+                    : aValue.toString().localeCompare(bValue.toString());
+            return direction === "asc" ? cmp : -cmp;
+        });
+    }, [allResorts, sortConfig]);
 
     if (loading) return <p style={{ textAlign: "center" }}>Loading resorts data...</p>;
     if (error) return <p style={{ textAlign: "center" }}>{error}</p>;
