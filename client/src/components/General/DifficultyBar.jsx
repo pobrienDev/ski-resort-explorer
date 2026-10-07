@@ -1,25 +1,9 @@
 import { Box, Tooltip, Typography } from "@mui/material";
+import { DIFFICULTY_SEGMENTS as SEGMENTS, pct } from "../../utils/difficulty";
 
-// Standard North American trail-rating colors. Black is required by the domain
-// even though it has no chroma, so identity is never color-alone: segments are
-// separated by 2px gaps, outlined for contrast on dark surfaces, tooltipped,
-// and (with showLegend) labeled directly.
-const SEGMENTS = [
-    { key: "green_percent", label: "Green", fill: "#388e3c" },
-    { key: "blue_percent", label: "Blue", fill: "#1e88e5" },
-    { key: "black_percent", label: "Black", fill: "#1b1b1b" },
-    {
-        key: "double_black_percent",
-        label: "Double Black",
-        fill: "repeating-linear-gradient(135deg, #1b1b1b 0 5px, #5c6b73 5px 9px)",
-    },
-];
-
-const pct = (value) => {
-    const n = Number(value);
-    return value === "" || value == null || Number.isNaN(n) ? 0 : Math.max(0, n);
-};
-
+// Black is required by the domain even though it has no chroma, so identity is
+// never color-alone: segments are separated by 2px gaps, outlined for contrast
+// on dark surfaces, tooltipped, and (with showLegend) labeled directly.
 const outline = (theme) =>
     `1px solid ${theme.palette.mode === "dark" ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.15)"}`;
 
