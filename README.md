@@ -26,6 +26,16 @@ Search, the interactive resort map, and a resort detail page with live weather:
 
 The weather endpoints return `503` if `OPENWEATHER_API_KEY` is not set, `400` for invalid coordinates, and `502` if OpenWeather is unreachable. The upstream status is logged on the server but never exposed to clients.
 
+## Running with Docker
+
+With [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed, one command brings up MySQL seeded from the dump, the Flask API behind gunicorn, and the Vite dev server with hot reload:
+
+```bash
+docker compose up
+```
+
+Then open http://localhost:5173. Put `OPENWEATHER_API_KEY` in a `.env` file next to `docker-compose.yml` (see [.env.example](.env.example)) to enable the weather panel; `CLIENT_PORT` and `API_PORT` there change the host ports if the defaults clash. The database lives in a named volume, so `docker compose down -v` resets it to the committed dump.
+
 ## Running locally
 
 ### Database
@@ -43,7 +53,7 @@ mysql -u root SkiResorts < server/skiresorts.sql
 cd server
 cp .env.example .env   # then fill in your OpenWeather API key
 pip install -r requirements.txt
-python main.py         # runs on http://localhost:8080
+python main.py         # runs on http://localhost:8080 (dev server; the Docker image uses gunicorn)
 ```
 
 Server environment variables (in `server/.env`, see [server/.env.example](server/.env.example)):

@@ -55,3 +55,11 @@ jobs:
         working-directory: client
       - run: npm run build
         working-directory: client
+
+  docker:
+    name: Docker images build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose config --quiet
+      - run: docker compose build

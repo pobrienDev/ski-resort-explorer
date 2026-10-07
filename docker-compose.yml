@@ -1,0 +1,54 @@
+# One-command local stack: MySQL seeded from the dump, the Flask API behind
+# gunicorn, and the Vite dev server with hot reload.
+#
+#   docker compose up            # http://localhost:5173 (CLIENT_PORT / API_PORT override the host ports)
+#   docker compose down -v       # also drops the database volume
+#
+# Put OPENWEATHER_API_KEY in a .env file next to this one (or in your shell)
+# to enable the weather panel; everything else works without it.
+
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: SkiResorts
+    volumes:
+      - db-data:/var/lib/mysql
+      # Runs once when the volume is first created; MySQL imports every .sql file here.
+      - ./server/skiresorts.sql:/docker-entrypoint-initdb.d/skiresorts.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: ./server
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: ""
+      DB_NAME: SkiResorts
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  client:
+    build: ./client
+    environment:
+      # Vite's dev proxy forwards /api to the api container (see client/vite.config.js).
+      VITE_API_BASE_URL: http://api:8080
+    ports:
+      - "${CLIENT_PORT:-5173}:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    depends_on:
+      - api
+
+volumes:
+  db-data:
