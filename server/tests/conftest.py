@@ -24,6 +24,31 @@ sys.path.insert(0, str(SERVER_DIR))
 import main  # noqa: E402
 
 
+class FakeClock:
+    """Manual clock for cache tests: advance() moves time forward."""
+
+    def __init__(self):
+        self.now = 1000.0
+
+    def __call__(self):
+        return self.now
+
+    def advance(self, seconds):
+        self.now += seconds
+
+
+@pytest.fixture
+def clock():
+    return FakeClock()
+
+
+@pytest.fixture(autouse=True)
+def fresh_weather_caches(monkeypatch, clock):
+    """Give every test empty weather caches driven by the fake clock."""
+    monkeypatch.setattr(main, "CONDITIONS_CACHE", main.TTLCache(main.WEATHER_CACHE_SECONDS, 256, clock=clock))
+    monkeypatch.setattr(main, "TILE_CACHE", main.TTLCache(main.WEATHER_CACHE_SECONDS, 1024, clock=clock))
+
+
 @pytest.fixture
 def client():
     main.app.config["TESTING"] = True

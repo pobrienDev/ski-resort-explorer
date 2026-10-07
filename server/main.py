@@ -1,9 +1,11 @@
+from collections import OrderedDict
 from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 import logging
 import mysql.connector
 import os
 import requests
+import time
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -35,6 +37,46 @@ OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "")
 OPENWEATHER_WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather"
 OPENWEATHER_TILE_URL = "https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png"
 OPENWEATHER_TIMEOUT_SECONDS = 10
+
+# Weather responses are cached in memory so repeat views, and the many tile
+# requests a single radar pan produces, do not each cost an upstream call.
+# OpenWeather refreshes roughly every 10 minutes, so that is the default TTL.
+WEATHER_CACHE_SECONDS = int(os.getenv("WEATHER_CACHE_SECONDS", "600"))
+
+
+class TTLCache:
+    """A tiny in-process cache: entries expire after ttl seconds and the
+    oldest entry is evicted once max_entries is exceeded. Per gunicorn
+    worker, not shared, which is fine at this app's scale."""
+
+    def __init__(self, ttl_seconds, max_entries, clock=time.monotonic):
+        self.ttl = ttl_seconds
+        self.max_entries = max_entries
+        self.clock = clock
+        self._entries = OrderedDict()
+
+    def get(self, key):
+        entry = self._entries.get(key)
+        if entry is None:
+            return None
+        expires_at, value = entry
+        if self.clock() >= expires_at:
+            del self._entries[key]
+            return None
+        return value
+
+    def set(self, key, value):
+        self._entries[key] = (self.clock() + self.ttl, value)
+        self._entries.move_to_end(key)
+        while len(self._entries) > self.max_entries:
+            self._entries.popitem(last=False)
+
+    def __len__(self):
+        return len(self._entries)
+
+
+CONDITIONS_CACHE = TTLCache(WEATHER_CACHE_SECONDS, max_entries=256)
+TILE_CACHE = TTLCache(WEATHER_CACHE_SECONDS, max_entries=1024)
 
 def get_db_connection():
     """Establish and return a MySQL database connection."""
@@ -163,13 +205,21 @@ def get_weather():
     if not (-90 <= lat <= 90 and -180 <= lon <= 180):
         return jsonify({"error": "lat/lon out of range"}), 400
 
+    # Two decimals is about 1 km, so nearby requests share an entry.
+    key = (round(lat, 2), round(lon, 2))
+    cached = CONDITIONS_CACHE.get(key)
+    if cached is not None:
+        return jsonify(cached), 200, {"X-Cache": "HIT"}
+
     upstream = fetch_openweather(
         OPENWEATHER_WEATHER_URL,
         {"lat": lat, "lon": lon, "units": "imperial"},
     )
     if upstream is None:
         return jsonify({"error": "Weather service unavailable"}), 502
-    return jsonify(upstream.json()), 200
+    payload = upstream.json()
+    CONDITIONS_CACHE.set(key, payload)
+    return jsonify(payload), 200, {"X-Cache": "MISS"}
 
 @app.route("/api/weather/tiles/<int:z>/<int:x>/<int:y>.png", methods=['GET'])
 def get_weather_tile(z, x, y):
@@ -180,14 +230,21 @@ def get_weather_tile(z, x, y):
     if z > 19 or x >= max_index or y >= max_index:
         return jsonify({"error": "Invalid tile coordinates"}), 400
 
-    upstream = fetch_openweather(OPENWEATHER_TILE_URL.format(z=z, x=x, y=y), {})
-    if upstream is None:
-        return jsonify({"error": "Weather service unavailable"}), 502
+    key = (z, x, y)
+    png = TILE_CACHE.get(key)
+    cache_state = "HIT"
+    if png is None:
+        upstream = fetch_openweather(OPENWEATHER_TILE_URL.format(z=z, x=x, y=y), {})
+        if upstream is None:
+            return jsonify({"error": "Weather service unavailable"}), 502
+        png = upstream.content
+        TILE_CACHE.set(key, png)
+        cache_state = "MISS"
     return Response(
-        upstream.content,
+        png,
         status=200,
         content_type="image/png",
-        headers={"Cache-Control": "public, max-age=600"},
+        headers={"Cache-Control": f"public, max-age={WEATHER_CACHE_SECONDS}", "X-Cache": cache_state},
     )
 
 if __name__ == "__main__":

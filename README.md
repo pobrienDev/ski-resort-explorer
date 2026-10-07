@@ -24,7 +24,7 @@ Search, the interactive resort map, and a resort detail page with live weather:
 | `GET /api/weather?lat=<lat>&lon=<lon>` | Current conditions from OpenWeather (imperial units), proxied server-side |
 | `GET /api/weather/tiles/<z>/<x>/<y>.png` | OpenWeather precipitation radar tile for the detail-page map, proxied server-side |
 
-The weather endpoints return `503` if `OPENWEATHER_API_KEY` is not set, `400` for invalid coordinates, and `502` if OpenWeather is unreachable. The upstream status is logged on the server but never exposed to clients.
+The weather endpoints return `503` if `OPENWEATHER_API_KEY` is not set, `400` for invalid coordinates, and `502` if OpenWeather is unreachable. The upstream status is logged on the server but never exposed to clients. Responses are cached in memory for `WEATHER_CACHE_SECONDS` (default 600) so repeat views and radar panning do not each cost an upstream call; an `X-Cache: HIT|MISS` header shows whether a response came from the cache.
 
 ## Running with Docker
 
@@ -62,6 +62,7 @@ Server environment variables (in `server/.env`, see [server/.env.example](server
 - `OPENWEATHER_API_KEY` — OpenWeather key for the weather panel and radar map. It is only ever read by Flask; the React app calls the `/api/weather` routes and Flask forwards the request upstream. Without it the app still runs, but the resort detail page shows a weather error instead of conditions.
 - `CORS_ORIGINS` — optional, comma-separated. Leave unset for local development: the Vite dev server proxies `/api` to Flask, so the browser never makes a cross-origin request. Set it only when a separately hosted frontend calls the API directly.
 - `FLASK_DEBUG` — defaults to `1` (debug reloader on). Set to `0` to run without it.
+- `WEATHER_CACHE_SECONDS` — how long weather responses are cached in memory. Defaults to 600.
 
 ### Frontend
 

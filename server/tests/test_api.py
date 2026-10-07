@@ -192,3 +192,88 @@ def test_tile_proxies_png_with_cache_header(client, monkeypatch):
     assert res.headers["Cache-Control"] == "public, max-age=600"
     assert seen["url"] == "https://tile.openweathermap.org/map/precipitation_new/7/10/36.png"
     assert seen["params"] == {"appid": "k"}
+
+
+# --- weather caching ------------------------------------------------------------
+
+def counting_upstream(monkeypatch, response_factory):
+    """Install a fake requests.get that counts calls."""
+    calls = []
+
+    def fake_get(url, params=None, timeout=None):
+        calls.append(url)
+        return response_factory()
+
+    monkeypatch.setattr(main.requests, "get", fake_get)
+    return calls
+
+
+def test_conditions_are_served_from_cache_until_they_expire(client, monkeypatch, clock):
+    monkeypatch.setattr(main, "OPENWEATHER_API_KEY", "k")
+    calls = counting_upstream(monkeypatch, lambda: FakeResponse(200, {"main": {"temp": 1}}))
+
+    first = client.get("/api/weather?lat=39.6&lon=-106.4")
+    second = client.get("/api/weather?lat=39.6&lon=-106.4")
+    assert first.headers["X-Cache"] == "MISS"
+    assert second.headers["X-Cache"] == "HIT"
+    assert second.get_json() == first.get_json()
+    assert len(calls) == 1
+
+    clock.advance(main.WEATHER_CACHE_SECONDS + 1)
+    third = client.get("/api/weather?lat=39.6&lon=-106.4")
+    assert third.headers["X-Cache"] == "MISS"
+    assert len(calls) == 2
+
+
+def test_nearby_coordinates_share_a_cache_entry(client, monkeypatch):
+    monkeypatch.setattr(main, "OPENWEATHER_API_KEY", "k")
+    calls = counting_upstream(monkeypatch, lambda: FakeResponse(200, {"main": {"temp": 1}}))
+    client.get("/api/weather?lat=39.6041&lon=-106.3742")
+    res = client.get("/api/weather?lat=39.6049&lon=-106.3738")  # same to two decimals
+    assert res.headers["X-Cache"] == "HIT"
+    assert len(calls) == 1
+    far = client.get("/api/weather?lat=39.70&lon=-106.37")
+    assert far.headers["X-Cache"] == "MISS"
+    assert len(calls) == 2
+
+
+def test_upstream_failures_are_not_cached(client, monkeypatch):
+    monkeypatch.setattr(main, "OPENWEATHER_API_KEY", "k")
+    responses = iter([FakeResponse(500), FakeResponse(200, {"ok": True})])
+    calls = counting_upstream(monkeypatch, lambda: next(responses))
+    assert client.get("/api/weather?lat=1&lon=1").status_code == 502
+    res = client.get("/api/weather?lat=1&lon=1")
+    assert res.status_code == 200 and res.headers["X-Cache"] == "MISS"
+    assert len(calls) == 2
+
+
+def test_tiles_are_cached_per_tile(client, monkeypatch, clock):
+    monkeypatch.setattr(main, "OPENWEATHER_API_KEY", "k")
+    calls = counting_upstream(monkeypatch, lambda: FakeResponse(200, content=b"\x89PNG"))
+    assert client.get("/api/weather/tiles/7/10/36.png").headers["X-Cache"] == "MISS"
+    assert client.get("/api/weather/tiles/7/10/36.png").headers["X-Cache"] == "HIT"
+    assert client.get("/api/weather/tiles/7/11/36.png").headers["X-Cache"] == "MISS"
+    assert len(calls) == 2
+    clock.advance(main.WEATHER_CACHE_SECONDS)
+    assert client.get("/api/weather/tiles/7/10/36.png").headers["X-Cache"] == "MISS"
+    assert len(calls) == 3
+
+
+def test_ttl_cache_evicts_oldest_when_full(clock):
+    cache = main.TTLCache(ttl_seconds=60, max_entries=2, clock=clock)
+    cache.set("a", 1)
+    cache.set("b", 2)
+    cache.set("c", 3)
+    assert cache.get("a") is None
+    assert cache.get("b") == 2 and cache.get("c") == 3
+    assert len(cache) == 2
+
+
+def test_ttl_cache_drops_expired_entries_on_read(clock):
+    cache = main.TTLCache(ttl_seconds=60, max_entries=10, clock=clock)
+    cache.set("a", 1)
+    clock.advance(59)
+    assert cache.get("a") == 1
+    clock.advance(1)
+    assert cache.get("a") is None
+    assert len(cache) == 0
